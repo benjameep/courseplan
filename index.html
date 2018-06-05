@@ -1,0 +1,378 @@
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.3.1/dist/semantic.min.css">
+  <script src="scripts/jquery-3.1.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.3.1/dist/semantic.min.js"></script>
+  <script src="https://semantic-ui.com/javascript/library/tablesort.js"></script>
+  <script src="scripts/ejs.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.0.4/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.0.4/firebase-database.js"></script>
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyDVXt-oBg1_o8lb-Dlsl6gvlqKA7gITAUo",
+      authDomain: "courseplanme.firebaseapp.com",
+      databaseURL: "https://courseplanme.firebaseio.com",
+      projectId: "courseplanme",
+      storageBucket: "courseplanme.appspot.com",
+      messagingSenderId: "758050784913"
+    };
+    firebase.initializeApp(config);
+  </script>
+	<style>
+      .avatar.image-cropper{
+        width: 2.5em;
+        height: 2.5em;
+      }
+      .image-cropper {
+        float:left;
+        width: 60px;
+        height: 60px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 50%;
+        margin-right: 10px;
+      }
+      img {
+          display: inline;
+          margin: 0 auto;
+          height: auto;
+          width: 100%;
+      }
+      .ui.mini.circular.labels{
+        display:inline;
+      }
+      .ui.mini.circular.labels .ui.label{
+        margin-right:0em;
+      }
+      .ui.tiny.header{
+        margin-bottom:.2em;
+      }
+      .ui.teal.basic.tiny.label{
+        margin-bottom:.5em
+      }
+      #semester{
+        margin-bottom: 10px;
+      }
+      .ui.grid.container{
+        margin-top:40px;
+      }
+	</style>
+	<script>
+    function flipIt(element){
+      var is = [['grey','radio'],['green','checkmark']]
+      var c = element.children[0].children[0].classList
+      var its = c.contains(...is[0])
+      c.remove(...is[+!its])
+      c.add(...is[+its])
+      $(element).closest('tr').toggleClass('positive')
+    }
+    function runSemantics(){
+			$(".rating").rating('disable');
+      $(".progress").progress({
+        showActivity:false
+      });
+			$('tr td:first-child').click(function(){
+        flipIt(this)
+        onSelection(this)
+      })
+      $('table').tablesort()
+      $('#sectionHeader').data('sortBy',(th,td) => {
+        return +!td.find('.green').length+'-'+td.text().trim().padStart(3,0)
+      })
+      $('#ratingHeader').data('sortBy',(tr,td) => {
+        return td.find('[data-rating]').attr('data-rating')+String((td.text().match(/\d+/g)||[]).reduce((a,b) => +b+a,0)).padStart(4,0)
+      })
+    }
+	</script>
+</head>
+
+<body>
+  <script id="course-template" type="text/x-ejs-template">
+    <div class="ui huge header">
+      <%= title %>
+      <div class="sub header"><%= code %></div>     
+    </div>
+    <p><%= des %></p>
+  </script>
+  <script id="section-template" type="text/x-ejs-template">
+  <% Object.values(sections).forEach(section => { %>
+    <tr>
+      <!-- Code -->
+      <td>
+        <div class="ui header">
+          <i class="grey radio icon"></i>
+          <%= section.section %>
+        </div>
+      </td>
+      <!-- Instructor -->
+      <td>
+        <% section.instructors.forEach(instructor => { %>
+        <div class="image-cropper">
+          <img src="https://web.byui.edu/Directory/Employee/<%= instructor.email ? instructor.email : 'notfound' %>.jpg">
+        </div>
+        <a href="https://web.byui.edu/Directory/Employee<%= instructor.email ? '/'+instructor.email : 's/'+instructor.last %>" class="ui header" target="_blank">
+          <%= instructor.last %>
+          <div class="sub header">
+            <%= instructor.first %> <%= instructor.middle %>
+            <% if(instructor.email){ %><i class="small linkify icon"></i><% } %>
+          </div>
+        </a>
+        <% if(section.instructors.length > 1){ %><div class="ui divider"></div><% } %>
+        <% }) %>
+      </td>
+      <!-- Rating -->
+      <td>
+        <% section.instructors.forEach(instructor => { %>
+          <% if(instructor.accounts){ %>
+            <div class="ui rating" data-rating="<%= Math.round(instructor.avgRating) %>" data-max-rating="5"></div>
+            <br/>
+            <% instructor.accounts.forEach(account => { %>
+              <a class="header" href="http://www.ratemyprofessors.com/ShowRatings.jsp?tid=<%= account.id %>" target="_blank"><%= account.numRatings %> review<%= account.numRatings != 1?'s':'' %></a>
+            <% }) %>
+          <% } else { %>
+            <a class="header" href="http://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=Brigham+Young+University-Idaho&schoolID=1754&query=<%= instructor.first+'%20'+instructor.last %>" target="_blank">
+              <div class="ui rating" data-rating="0" data-max-rating="5"></div>
+            </a>
+            <% if(section.instructors.length > 1){ %><br/><br/><% } %>
+          <% } %>
+          <% if(section.instructors.length > 1){ %><div class="ui divider"></div><% } %>
+        <% }) %>
+      </td>
+      <!-- Status -->
+      <td class="center aligned" data-sort-value="<%= String((section.seatsFilled/section.seatsTotal).toFixed(3)).padStart(5)%>">
+        <div class="item">
+          <% var isClosed = section.status != 'Open' && section.status != 'Reopened' %>
+          <% if(isClosed){ %>
+          <div class="ui teal basic tiny label"><%= section.status %></div>
+          <% } %>
+          <div class="ui small <%= isClosed?'disabled':'' %> teal progress" data-value="<%= section.seatsFilled %>" data-total="<%= section.seatsTotal %>">
+            <div class="bar"></div>
+            <div class="label"><%= section.seatsFilled %> of <%= section.seatsTotal %> filled</div>
+          </div>
+        </div>
+      </td>
+      <!-- Schedule -->
+      <td data-sort-value="<%= +!!(section.schedules[0].time == '0:00 - 0:00 AM')+section.schedules[0].startTime.replace(/(\d+):(\d+)(AM|PM)/,((_,h,m,t) => (t=='PM')*12+(h%12)+m)).padStart(4,0)+section.schedules[0].days.map(n => +!n).join('') %>">
+        <% section.schedules.forEach(schedule => { %>
+    
+          <% var isOnline = schedule.time == '0:00 - 0:00 AM' %>
+          <div class="ui tiny header">
+            <%= isOnline?schedule.location:schedule.time %>
+            <div class="sub header">
+              <%= !isOnline?schedule.location+' | ':'' %><%= schedule.method %>
+            </div>
+          </div>
+          <% if(!isOnline){ %>
+            <div class="ui mini circular labels">
+              <% ['M','Tu','W','Th','F','S'].forEach((day,i) => { %>
+              <div class="ui <%= schedule.days[i]?'teal':'' %> label"><%= day %></div>
+              <% }) %>
+            </div>
+          <% } %>
+        <% }) %>
+      </td>
+    </tr>
+    <% }) %>
+  </script>
+  <script id="saved-template" type="text/x-ejs-template">
+    <div class="ui selection list">
+    <% if(_saved[_semester]){ %> 
+      <% Object.values(_saved[_semester]).forEach(course => { %>
+        <div class="item" onclick="load('<%= _semester %>','<%= course.course.code %>')">
+          <div class="content">
+            <div class="header"><%= course.course.code %></div>
+            <div class="description"><%= course.course.title %></div>
+            <div class="list">
+              <% Object.values(course.sections).forEach(section => { %>
+                <div class="item">
+                  <div class="avatar image-cropper">
+                    <img src="https://web.byui.edu/Directory/Employee/<%= section.instructors[0].email || 'notfound' %>.jpg">
+                  </div>
+                  <div class="content">
+                    <div class="header"><%= section.instructors[0].last %>, <%= section.instructors[0].first %><%= section.instructors[0].middle?' '+section.instructors[0].middle:'' %></div>
+                    <div class="description"><span><%= section.schedules[0].time %> | <strong><%= section.schedules.reduce((days,sche) => sche.days.map((d,i) => d || days[i]),[]).join('') %></strong></div>
+                  </div>
+                </div>
+              <% }) %>              
+            </div>
+          </div>
+        </div>
+      <% }) %>    
+      <% } %>          
+    </div>
+  </script>
+<div class="ui grid container">
+  <div class="twelve wide column">
+    <div id="course-info">
+    </div>
+    <table class="ui sortable striped selectable single line celled table">
+      <thead>
+        <tr>
+          <th id="sectionHeader">Section #</th>
+          <th id="instructorHeader">Instructor</th>
+          <th id="ratingHeader">Rating</th>
+          <th id="statusHeader" class="three wide">Status</th>
+          <th id="scheduleHeader">Schedule</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  <div class="four wide column">
+    <div class="ui segment">
+      <div id="semester" class="ui large dropdown label">
+        <div class="text">2018;SP</div>
+        <i class="dropdown icon"></i>
+        <div class="menu">
+        </div>
+      </div>
+      <div id="search-container">
+        <div class="ui search">
+          <div class="ui icon input">
+            <input class="prompt" type="text" placeholder="Search for Course...">
+            <i class="search icon"></i>
+          </div>
+          <div class="results"></div>
+        </div>
+      </div>
+      <div id="saved"></div>
+    </div>
+  </div>
+</div>
+  <script>
+    const database = firebase.database()
+    var SectionTemplate = ejs.compile(document.getElementById('section-template').innerHTML,{client:true})
+    var CourseTemplate = ejs.compile(document.getElementById('course-template').innerHTML,{client:true})
+    var SavedTemplate = ejs.compile(document.getElementById('saved-template').innerHTML,{client:true})
+    window._saved = localStorage.saved ? JSON.parse(localStorage.saved) : {}
+
+    async function load(semester,courseCode){
+      await Promise.all([
+        new Promise((res,rej) => {
+          database.ref(`sections/${semester}/${courseCode}`).on('value',snapshot => {
+            var sections = snapshot.val()
+            document.querySelector('tbody').innerHTML = SectionTemplate({sections:sections})
+            // Allow access for later
+            window._sections = sections
+            res()
+          },rej)
+        }),
+        new Promise((res,rej) => {
+          database.ref(`courses/${courseCode}`).on('value',snapshot => {
+            var course = snapshot.val()
+            document.getElementById('course-info').innerHTML = CourseTemplate(course)
+            // Allow access for later
+            window._course = course
+            res()
+          },rej)
+        }),
+      ]).catch(console.error)
+      var sections,course
+      document.querySelector('.ui.search input').value = ""
+      runSemantics()
+      updateSaved()
+    }
+
+    async function search(){
+      var course = document.querySelector('#search input').value
+      var semester = document.querySelector('#semester .selected').dataset.value
+      course = course.replace(/\s/g,'').toUpperCase()
+      load(semester,course)
+    }
+
+    function initSearch(){
+      if(_semester){
+        database.ref(`directories/courses/${_semester}`).on('value',snapshot => {
+          var parent = document.getElementById('search-container')
+          var guts = parent.innerHTML
+          parent.innerHTML = ""
+          parent.innerHTML = guts
+          $('.ui.search').search({
+            source: Object.values(snapshot.val()).map(c => ({title:c.code,description:c.title})),
+            searchFields:[
+              'title','description'
+            ],
+            onSelect: result => {
+              load(_semester,result.title)
+            },
+          })
+        })
+      }
+    }
+
+    async function semesterChange(semester){
+      window._semester = semester
+      updateSaved()
+      document.querySelector('tbody').innerHTML = ""
+      document.getElementById('course-info').innerHTML = ""
+      initSearch()
+    }
+    function loadSemesters(){
+      window._semester = new Date().getFullYear()+';'+(() => {
+        switch(new Date().getMonth()+1){
+          case 10:case 11:case 12:case 1:
+          return 'WI'
+          case 2:case 3:
+          return 'SP'
+          case 4:case 5:
+          return 'SS'
+          case 6:case 7:case 8:case 9:
+          return 'FA'
+        }
+      })()
+      const calc = ([year,sem]) => year*4 + ['WI','SP','SS','FA'].indexOf(sem)
+      const name = ([year,sem]) => ({WI:'Winter',SP:'Spring',SS:'Summer',FA:'Fall'})[sem]+' '+year
+      database.ref('/directories/semesters').on('value',snapshot => {
+        $('.ui.dropdown').dropdown({
+          values:Object.keys(snapshot.val()).map(code => ({
+            name: name(code.split(';')),
+            value: code,
+            selected: code == _semester
+          })).sort((a,b) => calc(a.value.split(';')) - calc(b.value.split(';'))),
+          onChange: semesterChange,
+        })
+      })
+    }
+    function onSelection(element){
+      var section = element.innerText.trim()
+      var isAdd = element.parentElement.classList.contains('positive')
+      var alreadyExists = _saved[_semester] && _saved[_semester][_course.code] && _saved[_semester][_course.code].sections[section]
+
+      if(isAdd && !alreadyExists){
+        // Set up if not already setup
+        _saved[_semester] || (_saved[_semester] = {}) 
+        _saved[_semester][_course.code] || (_saved[_semester][_course.code] = {course: _course,sections:{}})
+        
+        _saved[_semester][_course.code].sections[section] = _sections[section]
+      } else if(alreadyExists){
+        delete _saved[_semester][_course.code].sections[section]
+        if(!Object.keys(_saved[_semester][_course.code].sections).length){
+          delete _saved[_semester][_course.code]
+          if(!Object.keys(_saved[_semester]).length){
+            delete _saved[_semester]
+          }
+        }
+      }
+      save()
+      updateSaved()
+    }
+    function save(){
+      localStorage.saved = JSON.stringify(_saved)
+    }
+    function updateSaved(){
+      document.querySelectorAll('td:first-child').forEach(element => {
+        var isOn = element.parentElement.classList.contains('positive')
+        var section = element.innerText.trim()
+        var supposedToBeOn = _saved[_semester] && _saved[_semester][_course.code] && _saved[_semester][_course.code].sections[section]
+        if((isOn && !supposedToBeOn) || (!isOn && supposedToBeOn)){
+          flipIt(element)
+        }
+      })
+      document.getElementById('saved').innerHTML = SavedTemplate()
+    }
+
+    loadSemesters()
+    updateSaved()
+  </script>
+</body>
