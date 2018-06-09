@@ -1,0 +1,25 @@
+<div class="ui selection list">
+<% if(_saved[_semester]){ %> 
+  <% Object.values(_saved[_semester]).forEach(function(course){ %>
+    <div class="item" onclick="load('<%= _semester %>','<%= course.course.code %>')">
+      <div class="content">
+        <div class="header"><%= course.course.code %></div>
+        <div class="description"><%= course.course.title %></div>
+        <div class="list">
+          <% Object.values(course.sections).forEach(function(section){ %>
+            <div class="item">
+              <div class="avatar image-cropper">
+                <img src="https://web.byui.edu/Directory/Employee/<%= section.instructors[0].email || 'notfound' %>.jpg">
+              </div>
+              <div class="content">
+                <div class="header"><%= section.instructors[0].last %>, <%= section.instructors[0].first %><%= section.instructors[0].middle?' '+section.instructors[0].middle:'' %></div>
+                <div class="description"><span><%= section.schedules[0].time %> | <strong><%= section.schedules.reduce(function(days,sche){ return sche.days.map(function(d,i){ return d || days[i]})},[]).join('') %></strong></div>
+              </div>
+            </div>
+          <% }) %>              
+        </div>
+      </div>
+    </div>
+  <% }) %>    
+  <% } %>          
+</div>

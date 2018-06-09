@@ -1,0 +1,37 @@
+.avatar.image-cropper{
+  width: 2.5em;
+  height: 2.5em;
+}
+.image-cropper {
+  float:left;
+  width: 60px;
+  height: 60px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+img {
+    display: inline;
+    margin: 0 auto;
+    height: auto;
+    width: 100%;
+}
+.ui.mini.circular.labels{
+  display:inline;
+}
+.ui.mini.circular.labels .ui.label{
+  margin-right:0em;
+}
+.ui.tiny.header{
+  margin-bottom:.2em;
+}
+.ui.teal.basic.tiny.label{
+  margin-bottom:.5em
+}
+#semester{
+  margin-bottom: 10px;
+}
+.ui.grid.container{
+  margin-top:40px;
+}

@@ -1,0 +1,78 @@
+<% Object.values(sections).forEach(function(section){ %>
+<tr>
+  <!-- Code -->
+  <td>
+    <div class="ui header">
+      <i class="grey radio icon"></i>
+      <%= section.section %>
+    </div>
+  </td>
+  <!-- Instructor -->
+  <td>
+    <% section.instructors.forEach(function(instructor){ %>
+    <div class="image-cropper">
+      <img src="https://web.byui.edu/Directory/Employee/<%= instructor.email ? instructor.email : 'notfound' %>.jpg">
+    </div>
+    <a href="https://web.byui.edu/Directory/Employee<%= instructor.email ? '/'+instructor.email : 's/'+instructor.last %>" class="ui header" target="_blank">
+      <%= instructor.last %>
+      <div class="sub header">
+        <%= instructor.first ? instructor.first : '' %> <%= instructor.middle ? instructor.middle : '' %>
+        <% if(instructor.email){ %><i class="small linkify icon"></i><% } %>
+      </div>
+    </a>
+    <% if(section.instructors.length > 1){ %><div class="ui divider"></div><% } %>
+    <% }) %>
+  </td>
+  <!-- Rating -->
+  <td>
+    <% section.instructors.forEach(function(instructor){ %>
+      <% if(instructor.accounts){ %>
+        <div class="ui rating" data-rating="<%= Math.round(instructor.avgRating) %>" data-max-rating="5"></div>
+        <br/>
+        <% instructor.accounts.forEach(function(account){ %>
+          <a class="header" href="http://www.ratemyprofessors.com/ShowRatings.jsp?tid=<%= account.id %>" target="_blank"><%= account.numRatings %> review<%= account.numRatings != 1?'s':'' %></a>
+        <% }) %>
+      <% } else { %>
+        <a class="header" href="http://www.ratemyprofessors.com/search.jsp?queryoption=HEADER&queryBy=teacherName&schoolName=Brigham+Young+University-Idaho&schoolID=1754&query=<%= instructor.first+'%20'+instructor.last %>" target="_blank">
+          <div class="ui rating" data-rating="0" data-max-rating="5"></div>
+        </a>
+        <% if(section.instructors.length > 1){ %><br/><br/><% } %>
+      <% } %>
+      <% if(section.instructors.length > 1){ %><div class="ui divider"></div><% } %>
+    <% }) %>
+  </td>
+  <!-- Status -->
+  <td class="center aligned" data-sort-value="<%= String((section.seatsFilled/section.seatsTotal).toFixed(3)).padStart(5)%>">
+    <div class="item">
+      <% var isClosed = section.status != 'Open' && section.status != 'Reopened' %>
+      <% if(isClosed){ %>
+      <div class="ui teal basic tiny label"><%= section.status %></div>
+      <% } %>
+      <div class="ui small <%= isClosed?'disabled':'' %> teal progress" data-value="<%= section.seatsFilled %>" data-total="<%= section.seatsTotal %>">
+        <div class="bar"></div>
+        <div class="label"><%= section.seatsFilled %> of <%= section.seatsTotal %> filled</div>
+      </div>
+    </div>
+  </td>
+  <!-- Schedule -->
+  <td data-sort-value="<%= +!!(section.schedules[0].time == '0:00 - 0:00 AM') + section.schedules[0].startTime.replace(/(\d+):(\d+)(AM|PM)/, function (_, h, m, t) { return (t == 'PM') * 12 + (h % 12) + m }).padStart(4, 0) + section.schedules[0].days.map(function (n) { return +!n }).join('') %>">
+    <% section.schedules.forEach(function(schedule){ %>
+
+      <% var isOnline = schedule.time == '0:00 - 0:00 AM' %>
+      <div class="ui tiny header">
+        <%= isOnline?schedule.location:schedule.time %>
+        <div class="sub header">
+          <%= !isOnline?schedule.location+' | ':'' %><%= schedule.method %>
+        </div>
+      </div>
+      <% if(!isOnline){ %>
+        <div class="ui mini circular labels">
+          <% ['M','Tu','W','Th','F','S'].forEach(function(day,i){ %>
+          <div class="ui <%= schedule.days[i]?'teal':'' %> label"><%= day %></div>
+          <% }) %>
+        </div>
+      <% } %>
+    <% }) %>
+  </td>
+</tr>
+<% }) %>

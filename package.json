@@ -1,0 +1,39 @@
+{
+  "name": "courseplan",
+  "version": "1.0.0",
+  "description": "Get easy access to list of courses at byui to help plan out which sections to take.",
+  "main": "index.js",
+  "dependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "firebase": "^5.0.4",
+    "firebaseui": "^3.0.0",
+    "jquery": "^3.3.1",
+    "semantic-ui": "^2.3.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-loader": "^7.1.4",
+    "css-loader": "^0.28.11",
+    "ejs-compiled-loader": "^1.1.0",
+    "style-loader": "^0.21.0",
+    "url-loader": "^1.0.1",
+    "webpack": "^4.11.0",
+    "webpack-cli": "^3.0.2"
+  },
+  "scripts": {
+    "start": "webpack --config webpack.config.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benjameep/courseplan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/benjameep/courseplan/issues"
+  },
+  "homepage": "https://github.com/benjameep/courseplan#readme"
+}
